@@ -1,8 +1,9 @@
-
+/*
 %# Calcola R in base agli anni che viene seguito il microservizio.
 totalR(Microservice, R) :-
     microservice(Microservice, _, TiR, RPerYear),
     R is RPerYear * TiR.
+*/
 
 %# Controlla che il microservizio M possa essere supportato dal nodo N.
 isNodeElegible(Node, RR) :-
