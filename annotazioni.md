@@ -23,7 +23,6 @@
 - **Dell PowerEdge R940 (High-performance)**: Up to 100 Gbps - 100 Gbps.
 ---
 <br />
-<br />
 
 # Dubbi
 
