@@ -21,5 +21,6 @@ microservice(backEnd, rr(10, 32, 10, 10), 2).
 
 %# Dichiarazione dell'app.
 % application(appID, microservices, R)
+application(app1, [frontEnd], 1000).
 application(app, [frontEnd, backEnd], 1000).
-functionalUnits(10000).
+

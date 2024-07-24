@@ -5,33 +5,36 @@
 
 %# Trova il piazzamento con lo SCI più basso. In parità di SCI restituisce il piazzamento che utilizza
 %# meno nodi.
-minPacking(App, Packing, SCI, NumberOfNodes) :-
-    packing(App, Packing, SCI, NumberOfNodes), 
-    \+ (packing(App, P1, S1, N1), dif(P1,Packing),  (S1 < SCI ; (S1 =:= SCI, N1 < NumberOfNodes))).
+minPlacement(App, Placement, SCI, NumberOfNodes) :-
+    placement(App, Placement, SCI, NumberOfNodes), 
+    \+ (placement(App, P1, S1, N1), dif(P1,Placement),  (S1 < SCI ; (S1 =:= SCI, N1 < NumberOfNodes))).
 
 %# Trova un piazzamento valido per l'applicazione e restituisce lo SCI e i numeri di nodi associati
 %# al piazzamento
-packing(App, Packing, SCI, NumberOfNodes) :-
+placement(App, Placement, SCI, NumberOfNodes) :-
     application(App, Ms, R),
-    eligiblePacking(Ms, [], Packing), 
-    involvedNodes(Packing, NumberOfNodes),
-    sci(R, Packing, SCI).
+    eligiblePlacement(Ms, [], Placement), 
+    involvedNodes(Placement, NumberOfNodes),
+    sci(R, Placement, SCI).
 
 %# Trova un piazzamento valido per la lista di microservizi.
-eligiblePacking([M|Ms], P, NewP) :-
-    microservice(M, rr(CPUReq, RAMReq, BWinReq, BWoutReq), _),
+eligiblePlacement([M|Ms], P, NewP) :-
+    microservice(M, RR, _),
+    placementNode(N, P, RR),
+    eligiblePlacement(Ms, [on(M,N)|P], NewP).
+eligiblePlacement([], P, P).
+
+placementNode(N, P, rr(CPUReq, RAMReq, BWinReq, BWoutReq)) :-
     node(N, tor(CPU, RAM, BWin, BWout), _, _, _, _),
     hardwareUsedAtNode(N, P, rr(UCPU, URAM, UBWin, UBWout)),
     CPU >= UCPU + CPUReq, 
     RAM >= URAM + RAMReq, 
     BWin >= UBWin + BWinReq, 
-    BWout >= UBWout + BWoutReq,
-    eligiblePacking(Ms, [on(M,N)|P], NewP).
-eligiblePacking([], P, P).
+    BWout >= UBWout + BWoutReq.
 
 %# Conta la quantità di nodi utilizzati dal piazzamento.
-involvedNodes(Packing, InvolvedNodes) :-
-    findall(N, distinct(node(N,_), member(on(_,N),Packing)), Nodes),
+involvedNodes(Placement, InvolvedNodes) :-
+    findall(N, distinct(node(N,_), member(on(_,N),Placement)), Nodes),
     length(Nodes, InvolvedNodes).
 
 %# Calcola la quantità di HW usato sul nodo N.
@@ -49,17 +52,17 @@ sumHWReqs([rr(CPU,RAM,BWin,BWout) | RRs], rr(TCPU, TRAM, TBWin, TBWout)) :-
 sumHWReqs([], rr(0,0,0,0)).
 
 %# Calcola lo SCI di un piazzamento.
-sci(R, Packing, SCI) :-
-    calculateCarbon(Packing, C),
+sci(R, Placement, SCI) :-
+    carbonEmissions(Placement, C),
     SCI is C / R.
 
 %# Calcola la quantità di carbonio di un piazzamento.
-calculateCarbon([on(Microservice, Node) | P], C) :-
-    calculateCarbon(P, AccC),
+carbonEmissions([on(Microservice, Node) | P], C) :-
+    carbonEmissions(P, AccC),
     operationalCarbon(Node, Microservice, O),
     embodiedCarbon(Node, Microservice, E),
     C is AccC + O + E.
-calculateCarbon([], 0).
+carbonEmissions([], 0).
 
 %# Calcolo della quantità di energia necessaria per eseguire il micrservizio M
 %# sul nodo N per tutta la TiL.
