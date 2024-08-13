@@ -297,7 +297,7 @@ Che interagisce con il microservizio <b>Checkout</b>. \
 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`_, err := pb.NewEmailServiceClient(cs.emailSvcConn).SendOrderConfirmation(newCtx, &pb.SendOrderConfirmationRequest{` \
 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Che interagisce con il microservizio <b>Email</b>. 
 
-_main.go_, riga 432: \
+_handlers.go_, riga 378: \
 `recommendations, _ := fe.getRecommendations(r.Context(), sessionID(r), nil)` \
 _rpc.go_, riga 179: \
 `resp, err := pb.NewRecommendationServiceClient(fe.recommendationSvcConn).ListRecommendations(newCtx, ` \
@@ -311,7 +311,7 @@ _rpg.go_, riga 76: \
 `resp, err := pb.NewProductCatalogServiceClient(fe.productCatalogSvcConn).GetProduct(newCtx, &pb.GetProductRequest{Id: id})` \
 Che interagisce con il microservizio <b>ProductCatalog</b> N volte.
 
-_main.go_, riga 432: \
+_handlers.go, riga 386: \
 `currencies, err := fe.getCurrencies(r.Context())` \
 _rpc.go_, riga 37: \
 `currs, err := pb.NewCurrencyServiceClient(fe.currencySvcConn).GetSupportedCurrencies(newCtx, &pb.Empty{})` \
