@@ -230,10 +230,13 @@ Che interagisce con il microservizio <b>Currency</b> N volte.
 
 ### 6. PlaceOrder
 
+---
+
 - L'endpoint <b>PlaceOrder</b> interagisce con i microservizi <b>Checkout</b>, <b>Recommendation</b>, <b>ProductCatalog</b> (XN) e <b>Currency</b>.
 - Il microservizio <b>Checkout</b> interagisce con i microservizi <b>Cart</b> (X2), <b>ProductCatalog</b>, <b>Currency</b> (X2), <b>Shipping</b> (X2), <b>Payment</b>  e <b>Email</b>.
 - Il microservizio <b>Cart</b> interagisce con la cache <b>Redis Cache</b>.
 - Il microservizio <b>Recommendation</b> interagisce con il microservizio <b>ProductCatalog</b>.
+---
 
 _handlers.go_, riga 404: \
 `order, err := pb.NewCheckoutServiceClient(fe.checkoutSvcConn).PlaceOrder(newCtx, &pb.PlaceOrderRequest{` \
