@@ -1,0 +1,2 @@
+application(onlineBoutique, [frontend, checkout, currency, email, payment, recommendation, shipping, ad, cart, product_catalog], 10000).
+application(onlineBoutiqueHome, [currency, product_catalog, cart], 10000). % For testing purposes.

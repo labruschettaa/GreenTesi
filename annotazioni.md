@@ -230,13 +230,10 @@ Che interagisce con il microservizio <b>Currency</b> N volte.
 
 ### 6. PlaceOrder
 
----
-
 - L'endpoint <b>PlaceOrder</b> interagisce con i microservizi <b>Checkout</b>, <b>Recommendation</b>, <b>ProductCatalog</b> (XN) e <b>Currency</b>.
 - Il microservizio <b>Checkout</b> interagisce con i microservizi <b>Cart</b> (X2), <b>ProductCatalog</b>, <b>Currency</b> (X2), <b>Shipping</b> (X2), <b>Payment</b>  e <b>Email</b>.
 - Il microservizio <b>Cart</b> interagisce con la cache <b>Redis Cache</b>.
 - Il microservizio <b>Recommendation</b> interagisce con il microservizio <b>ProductCatalog</b>.
----
 
 _handlers.go_, riga 404: \
 `order, err := pb.NewCheckoutServiceClient(fe.checkoutSvcConn).PlaceOrder(newCtx, &pb.PlaceOrderRequest{` \
@@ -297,7 +294,7 @@ Che interagisce con il microservizio <b>Checkout</b>. \
 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`_, err := pb.NewEmailServiceClient(cs.emailSvcConn).SendOrderConfirmation(newCtx, &pb.SendOrderConfirmationRequest{` \
 |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Che interagisce con il microservizio <b>Email</b>. 
 
-_handlers.go_, riga 378: \
+_main.go_, riga 432: \
 `recommendations, _ := fe.getRecommendations(r.Context(), sessionID(r), nil)` \
 _rpc.go_, riga 179: \
 `resp, err := pb.NewRecommendationServiceClient(fe.recommendationSvcConn).ListRecommendations(newCtx, ` \
@@ -311,7 +308,7 @@ _rpg.go_, riga 76: \
 `resp, err := pb.NewProductCatalogServiceClient(fe.productCatalogSvcConn).GetProduct(newCtx, &pb.GetProductRequest{Id: id})` \
 Che interagisce con il microservizio <b>ProductCatalog</b> N volte.
 
-_handlers.go, riga 386: \
+_main.go_, riga 432: \
 `currencies, err := fe.getCurrencies(r.Context())` \
 _rpc.go_, riga 37: \
 `currs, err := pb.NewCurrencyServiceClient(fe.currencySvcConn).GetSupportedCurrencies(newCtx, &pb.Empty{})` \
@@ -320,3 +317,4 @@ Che interagisce con il microservizio <b>Currency</b>.
 ---
 Note:
 RadisCart vs SpannerCart ??
+Endpoint che interagiscono N volte con un microservizio.
