@@ -96,13 +96,14 @@ def generateNodes(num, filename):
 
 def runExperiment(filename, appName, prolog_thread: PrologThread):
     """Runs the experiment for the file `filename` using the `prolog_thread`."""
-    start = round(time.time() * 1000)
+    start = time.time()
     result = prolog_thread.query_async(f"minPlacement('{filename}', {appName}, P, SCI, NumberOfNodes).")
     result = prolog_thread.query_async_result()
-    end = round(time.time() * 1000) - start
-    if(isinstance(result, bool)):
+    end = time.time()
+    duration = end - start
+    if isinstance(result, bool):
         print(f"""
-            TEST FOR {filename} RETURNED {result}, ENDED IN {end/1000} SECONDS.
+            TEST FOR {filename} RETURNED {result}, ENDED IN {duration:.6f} SECONDS.
               """)
         return
     result = result[0]
@@ -110,10 +111,10 @@ def runExperiment(filename, appName, prolog_thread: PrologThread):
     for p in result['P']:
         resultP.append(p['args'])
     print(f"""
-          TEST FOR {filename} ENDED IN {end/1000} SECONDS.
-          RESULTS   ->  PACKING = {resultP}, 
-                        SCI = {result['SCI']}
-                        NUMBER OF NODES = {result['NumberOfNodes']}
+        TEST FOR {filename} ENDED IN {duration:.6f} SECONDS.
+        RESULTS   ->  PACKING = {resultP},
+                      SCI = {result['SCI']}
+                      NUMBER OF NODES = {result['NumberOfNodes']}
           """)
     
 
