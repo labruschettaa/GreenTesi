@@ -62,25 +62,14 @@ sumHWReqs([], rr(0,0,0,0)).
 getAllEndpoints(App, EPs) :-
     findall(Endpoints, interface(App, Endpoints), NestedEPs),
     flatten(NestedEPs, EPs).
-    
-
-%# A check to make sure that the endpoints don't involve microservices not included
-%# in the application.
-checkMs(EP, [EPM | EPMs], Ms) :-
-    (member(EPM, Ms) -> checkMs(EP, EPMs, Ms)
-    ; format('Error: The endpoint "~w" interacts with the microservice "~w" which is not included in the list of microservices of the application.~n', [EP, EPM]), !, fail).
-checkMs(_, [], _).
-
+     
 
 %# Calculates the SCI relative to a single endpoint considering the probability
 %# that said endpoint is called.
-sciEP(EP, R, P, Ms, SCI) :-
-    (endpoint(EP, EPMs) -> true
-    ; format('Error: Could not find the endpoint "~w".~n', [EP]), !, fail),
-    checkMs(EP, EPMs, Ms), %# Error checking.
+sciEP(EP, R, P, SCI) :-
+    endpoint(EP, EPMs),
     findall(on(M,N), (member(M, EPMs), member(on(M, N), P)), FilteredP),
-    (probability(EP, Prob) -> true
-    ; format('Error: No probability found for endpoint "~w".~n', [EP]), !, fail),
+    probability(EP, Prob),
     carbonEmissions(FilteredP, C),
     SCI is (C / R) * Prob.
 
@@ -88,16 +77,15 @@ sciEP(EP, R, P, Ms, SCI) :-
 %# Calculates the SCI of the application's placement.
 sci(App, R, P, SCI) :-
     getAllEndpoints(App, EPs),
-    findall(M, microservice(M,_,_), Ms),
-    calculateEPsSCI(EPs, R, P, Ms, SCI).
+    calculateEPsSCI(EPs, R, P, SCI).
 
 
 %# Calculates the SCI of all the application's endpoints.
-calculateEPsSCI([EP | EPs], R, P, Ms, SCI) :-
-    calculateEPsSCI(EPs, R, P, Ms, AccSCI),
-    sciEP(EP, R, P, Ms, EPSCI),
+calculateEPsSCI([EP | EPs], R, P, SCI) :-
+    calculateEPsSCI(EPs, R, P, AccSCI),
+    sciEP(EP, R, P, EPSCI),
     SCI is EPSCI + AccSCI.
-calculateEPsSCI([], _, _, _, 0).
+calculateEPsSCI([], _, _, 0).
 
 
 %# Calculates the carbon amount of a placement.
