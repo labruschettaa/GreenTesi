@@ -59,7 +59,7 @@ sumHWReqs([], rr(0,0,0,0)).
 
 
 %# Finds all the endpoints relative to an application.
-getAllEndpoints(App, EPs) :-
+allEndPoints(App, EPs) :-
     findall(Endpoints, interface(App, Endpoints), NestedEPs),
     flatten(NestedEPs, EPs).
      
@@ -76,7 +76,7 @@ sciEP(EP, R, P, SCI) :-
 
 %# Calculates the SCI of the application's placement.
 sci(App, R, P, SCI) :-
-    getAllEndpoints(App, EPs),
+    allEndPoints(App, EPs),
     calculateEPsSCI(EPs, R, P, SCI).
 
 
