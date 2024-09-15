@@ -1,35 +1,12 @@
 from swiplserver import PrologMQI, PrologThread
-from enum import Enum
-import sys
+from data import Node, NodeT
 import random
 import time
+import argparse
+import subprocess
+import os
 
-class NodeT(Enum):
-    MEDIUM = 0
-    LARGE = 1
-    XLARGE = 2
-    X2LARGE = 3
-    X4LARGE = 4
-    X8LARGE = 5
-    X12LARGE = 6
-    X16LARGE = 7
-
-
-class Node:
-    def __init__(self, name, ncpu, ram, bwin, bwout, e, el, te, pue):
-        self.name = name
-        self.ncpu = ncpu
-        self.ram = ram
-        self.bwin = bwin
-        self.bwout = bwout
-        self.e = e
-        self.el = el
-        self.te = te
-        self.pue = pue
-    def __str__(self):
-        return f'Node: {self.name}, tor({self.ncpu},{self.ram},{self.bwin},{self.bwout}), {self.e}, {self.el}, {self.te}, {self.pue}'
-
-
+TESTING_DIRECTORY = 'resources/testing/'
 class FactoryNode:
     numNodes = [0] * len(NodeT)
     
@@ -94,7 +71,7 @@ def generateNodes(num, filename):
         prolog_thread.query(f"create(experimentNode, '{filename}', {node.name}, tor({node.ncpu}, {node.ram}, {node.bwin}, {node.bwout}), {node.e}, {node.el}, {node.te}, {node.pue}).")
 
 
-def runExperiment(filename, appName, prolog_thread: PrologThread):
+def runExperiment(filename, appName, prolog_thread: PrologThread, heuristic=False):
     """Runs the experiment for the file `filename` using the `prolog_thread`."""
     start = time.time()
     result = prolog_thread.query_async(f"minPlacement('{filename}', {appName}, P, SCI, NumberOfNodes).")
@@ -118,20 +95,40 @@ def runExperiment(filename, appName, prolog_thread: PrologThread):
           """)
     
 
+def getDirectoryFiles(directory):
+    try:
+        files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
+        return files
+    except FileNotFoundError:
+        print(f"The directory {directory} does not exist.")
+        return []
+
 with PrologMQI() as mqi:
+    parser = argparse.ArgumentParser(description='Run experiments with heuristic flag.')
+    parser.add_argument('--h', action='store_true', help='Set heuristic flag')
+    parser.add_argument('--r', action='store_true', help='Rerun the experiment on the existing files.')
+    parser.add_argument('appName', type=str, help='Application name')
+    parser.add_argument('args', nargs=argparse.REMAINDER, help='Additional arguments')
+    parsedArgs = parser.parse_args()
+    appName = parsedArgs.appName
+    args = [arg for arg in parsedArgs.args if not arg.startswith('--')]
     with mqi.create_thread() as prolog_thread:
-        appName = sys.argv[1]
-        args = sys.argv[2:]
         prolog_thread.query("consult('experiment.pl').")
         arrayNums = checkInput(appName, args, prolog_thread)
         files = []
-        prolog_thread.query("create(experiment).")
-        for num in arrayNums:
-            prolog_thread.query("cleanup.")
-            filename = 'n' + str(num) + '.pl'
-            files.append(filename)
-            FactoryNode.resetNumNodes()
-            generateNodes(num, filename)
+        print(parsedArgs.r)
+        if parsedArgs.r:
+            files = getDirectoryFiles(TESTING_DIRECTORY)
+        else:
+            prolog_thread.query("create(experiment).")
+            for num in arrayNums:
+                prolog_thread.query("cleanup.")
+                filename = 'n' + str(num) + '.pl'
+                files.append(filename)
+                FactoryNode.resetNumNodes()
+                generateNodes(num, filename)
         for filename in files:
-            runExperiment(filename, appName, prolog_thread)
+            if parsedArgs.h:
+                subprocess.run(['python', '--t==true'], filename)
+            runExperiment(filename, appName, prolog_thread, parsedArgs.h)
      

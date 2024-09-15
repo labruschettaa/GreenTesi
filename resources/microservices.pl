@@ -1,10 +1,10 @@
-microservice(frontend, rr(0.1, 0.128, 0.01, 0.01), 1).
-microservice(cart, rr(0.1, 0.064, 0.01, 0.01), 1).
 microservice(product_catalog, rr(0.2, 0.128, 0.05, 0.05), 1).
+microservice(checkout, rr(0.1, 0.128, 0.05, 0.05), 1).
+microservice(recommendation, rr(0.1, 0.128, 0.05, 0.05), 1).
+microservice(frontend, rr(0.1, 0.128, 0.01, 0.01), 1).
+microservice(email, rr(0.1, 0.128, 0.01, 0.01), 1).
+microservice(ad, rr(0.1, 0.128, 0.01, 0.01), 1).
+microservice(cart, rr(0.1, 0.064, 0.01, 0.01), 1).
 microservice(currency, rr(0.1, 0.064, 0.01, 0.01), 1).
 microservice(shipping, rr(0.1, 0.064, 0.01, 0.01), 1).
 microservice(payment, rr(0.1, 0.064, 0.01, 0.01), 1).
-microservice(checkout, rr(0.1, 0.128, 0.05, 0.05), 1).
-microservice(recommendation, rr(0.1, 0.128, 0.05, 0.05), 1).
-microservice(email, rr(0.1, 0.128, 0.01, 0.01), 1).
-microservice(ad, rr(0.1, 0.128, 0.01, 0.01), 1).
