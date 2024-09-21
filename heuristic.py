@@ -1,6 +1,6 @@
 from swiplserver import PrologMQI, PrologThread
 from data import Node, Microservice
-import argparse
+import argparse, os
 from typing import List, Union
 from enum import Enum
 # fare una versione di testing.py che usa heuristic.py per ordinare i file generati.
@@ -8,6 +8,7 @@ from enum import Enum
 MICROSERVICE_FILE = 'resources/microservices.pl'
 NODES_FILE = 'resources/nodes.pl'
 TESTING_DIRECTORY = 'resources/testing/'
+HEURISTIC_DIRECTORY = 'resources/testing/heuristic/'
 
 class ElemT(Enum):
     NODE = 0
@@ -75,8 +76,13 @@ def assignScores(type: ElemT, lst: List[object]):
 
 
 def writeElems(type, lst, file):
+    if parsedArgs.t and type == ElemT.NODE:
+        file = HEURISTIC_DIRECTORY + parsedArgs.file
+        directory = os.path.dirname(file)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
     with open(file, 'w') as f:
-        if type == ElemT.NODE:
+        if type == ElemT.NODE and not parsedArgs.t:
             f.write(":- dynamic node/6.\n\n")
         for elem in lst:
             if type == ElemT.NODE:
@@ -113,14 +119,18 @@ with PrologMQI() as mqi:
     nodesFile = NODES_FILE
     parser = argparse.ArgumentParser(description='Run the heuristic version of the program.')
     parser.add_argument('--t', action='store_true', help='Set testing flag')
-    parser.add_argument('file', nargs='?', default=nodesFile, help='The file that contain the nodes.')
+    parser.add_argument('file', type=str, default=nodesFile, help='The file that contain the nodes.')
     parsedArgs = parser.parse_args()
     if parsedArgs.t:
-        nodesFile = [arg for arg in parsedArgs.files if not arg.startswith('--')]
-        nodesFile = [TESTING_DIRECTORY + file for file in nodesFile]
+        nodesFile = TESTING_DIRECTORY + parsedArgs.file
     nodes, mss = [], []
+    
     with mqi.create_thread() as prolog_thread:
         prolog_thread.query("consult('main.pl').")
+        if parsedArgs.t:
+            prolog_thread.query("consult('experiment.pl').")
+            prolog_thread.query("cleanup.")
+            prolog_thread.query(f"consult('{nodesFile}').")
         nLst = readElems(ElemT.NODE, nodesFile)
         msLst = readElems(ElemT.MICROSERVICE, MICROSERVICE_FILE)
 
@@ -128,7 +138,7 @@ with PrologMQI() as mqi:
     msLst = assignScores(ElemT.MICROSERVICE, msLst)
     nLstSrtd = sorted(nLst, key=lambda x: (x["carbonScore"], -x["sizeScore"]))
     msLstSrtd = sorted(msLst, key=lambda x: -x["sizeScore"])
-    writeElems(ElemT.NODE, nLstSrtd, NODES_FILE)
+    writeElems(ElemT.NODE, nLstSrtd, nodesFile)
     writeElems(ElemT.MICROSERVICE, msLstSrtd, MICROSERVICE_FILE)
 
 

@@ -13,7 +13,7 @@ minPlacement(App, P, SCI, NumberOfNodes) :-
     placement(App, P, SCI, NumberOfNodes),
     \+ (placement(App, P1, S1, N1), dif(P1,P),  (S1 < SCI ; (S1 =:= SCI, N1 < NumberOfNodes))),
     !.
-
+    
 %# Finds a valid placement for the application and returns the SCI and the number of nodes associated with the placement.
 placement(App, P, SCI, NumberOfNodes) :-
     application(App, Ms, R),

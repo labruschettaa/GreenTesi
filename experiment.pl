@@ -4,15 +4,13 @@
 %# Prepares the environment for the experiment.
 experimentalEnvironment(FileName) :-
     cleanup,
-    getTestingDirectory(FileName,FullPath),
+    testingDirectory(FileName,FullPath),
     consult(FullPath).
 
-
-%# MinPlacement with the environment.
-minPlacement(FileName, App, P, SCI, NumberOfNodes) :-
-    experimentalEnvironment(FileName),
-    minPlacement(App, P, SCI, NumberOfNodes).
-
+heuristicExperimentalEnvironment(FileName) :-
+    cleanup,
+    heuristicTestingDirectory(FileName,FullPath),
+    consult(FullPath).
 
 %# Placement with the environment.
 placement(FileName, App, P, SCI, NumberOfNodes) :-
@@ -32,7 +30,7 @@ cleanup:- retractall(node(_,_,_,_,_,_)).
 
 %# Creates a new node for the experiment.
 create(experimentNode, FileName, Name, tor(NCPU, RAM, BWin, BWout), E, EL, TE, PUE) :-
-    getTestingDirectory(FileName,FullPath),
+    testingDirectory(FileName,FullPath),
     open(FullPath, append, Stream),
     consult(FullPath),
     writeP(Stream, node, [Name, tor(NCPU, RAM, BWin, BWout), E, EL, TE, PUE]),   
@@ -42,21 +40,25 @@ create(experimentNode, FileName, Name, tor(NCPU, RAM, BWin, BWout), E, EL, TE, P
 
 
 %# Returns the full path of the testing file.
-getTestingDirectory(FileName, FullPath) :-
+testingDirectory(FileName, FullPath) :-
     atom_concat('resources/testing/', FileName, FullPath).
 
+heuristicTestingDirectory(FileName, FullPath) :-
+    atom_concat('resources/testing/heuristic/', FileName, FullPath).
 
 %# Deletes a file.
-deleteFile(Directory, File) :-
+deleteDirElem(Directory, File) :-
     atomic_list_concat([Directory, '/', File], FilePath),
-    delete_file(FilePath).
+    (   exists_file(FilePath) ->  delete_file(FilePath)
+    ;   exists_directory(FilePath) ->  cleanDirectory(FilePath), delete_directory(FilePath);   true).
+
 
 
 %# Cleans a directory.
 cleanDirectory(Directory) :-
     directory_files(Directory, Fs),
     exclude(specialDirectory, Fs, FsList),
-    maplist(deleteFile(Directory), FsList).
+    maplist(deleteDirElem(Directory), FsList).
 
 
 %# Writes a predicate to a file.

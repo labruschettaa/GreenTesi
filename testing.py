@@ -73,10 +73,17 @@ def generateNodes(num, filename):
 
 def runExperiment(filename, appName, prolog_thread: PrologThread, heuristic=False):
     """Runs the experiment for the file `filename` using the `prolog_thread`."""
-    start = time.time()
-    result = prolog_thread.query_async(f"minPlacement('{filename}', {appName}, P, SCI, NumberOfNodes).")
+    if parsedArgs.h:
+        prolog_thread.query(f"heuristicExperimentalEnvironment('{filename}').")
+    else:
+        prolog_thread.query(f"experimentalEnvironment('{filename}').")
+    start = time.perf_counter()
+    if parsedArgs.h:
+        result = prolog_thread.query_async(f"heuristicMinPlacement('{appName}', P, SCI, NumberOfNodes).")
+    else:
+        result = prolog_thread.query_async(f"minPlacement('{appName}', P, SCI, NumberOfNodes).")
     result = prolog_thread.query_async_result()
-    end = time.time()
+    end = time.perf_counter()
     duration = end - start
     if isinstance(result, bool):
         print(f"""
@@ -110,13 +117,17 @@ with PrologMQI() as mqi:
     parser.add_argument('appName', type=str, help='Application name')
     parser.add_argument('args', nargs=argparse.REMAINDER, help='Additional arguments')
     parsedArgs = parser.parse_args()
+
+    if '--r' in parsedArgs.args:
+        parsedArgs.r = True
+    if '--h' in parsedArgs.args:
+        parsedArgs.h = True
     appName = parsedArgs.appName
     args = [arg for arg in parsedArgs.args if not arg.startswith('--')]
     with mqi.create_thread() as prolog_thread:
         prolog_thread.query("consult('experiment.pl').")
         arrayNums = checkInput(appName, args, prolog_thread)
         files = []
-        print(parsedArgs.r)
         if parsedArgs.r:
             files = getDirectoryFiles(TESTING_DIRECTORY)
         else:
@@ -129,6 +140,6 @@ with PrologMQI() as mqi:
                 generateNodes(num, filename)
         for filename in files:
             if parsedArgs.h:
-                subprocess.run(['python', '--t==true'], filename)
+                subprocess.run(['python', 'heuristic.py', '--t', filename])
             runExperiment(filename, appName, prolog_thread, parsedArgs.h)
      
