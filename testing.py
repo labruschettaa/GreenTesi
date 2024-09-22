@@ -79,6 +79,7 @@ def runExperiment(filename, appName, prolog_thread: PrologThread, heuristic=Fals
         prolog_thread.query(f"experimentalEnvironment('{filename}').")
     start = time.perf_counter()
     if parsedArgs.h:
+        subprocess.run(['python', 'heuristic.py', '--t', filename])
         result = prolog_thread.query_async(f"heuristicMinPlacement('{appName}', P, SCI, NumberOfNodes).")
     else:
         result = prolog_thread.query_async(f"minPlacement('{appName}', P, SCI, NumberOfNodes).")
@@ -139,7 +140,5 @@ with PrologMQI() as mqi:
                 FactoryNode.resetNumNodes()
                 generateNodes(num, filename)
         for filename in files:
-            if parsedArgs.h:
-                subprocess.run(['python', 'heuristic.py', '--t', filename])
             runExperiment(filename, appName, prolog_thread, parsedArgs.h)
      
