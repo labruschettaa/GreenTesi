@@ -110,7 +110,7 @@ operationalEnergy(Node, Microservice, E) :-
 
 %# Calculates the carbon intensity of running microservice M on node N.
 operationalCarbon(Node, Microservice, O) :-
-    carbon_intensity(_, I),
+    carbon_intensity(Node, I),
     operationalEnergy(Node, Microservice, E),
     O is E * I.
 
