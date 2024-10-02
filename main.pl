@@ -1,34 +1,25 @@
 %# Include di file ausiliari.
-:- use_module(library(apply)).
 :- consult('resources/variables.pl').
-
-
-%# Heuristic version of the algorithm.
-heuristicMinPlacement(App, P, SCI, NumberOfNodes) :-
-    placement(App, P, SCI, NumberOfNodes),
-    !.
 
 %# Finds the placement with the lowest SCI. In case of a tie in SCI, returns the placement that uses the fewest nodes.
 minPlacement(App, P, SCI, NumberOfNodes) :-
     placement(App, P, SCI, NumberOfNodes),
-    \+ (placement(App, P1, S1, N1), dif(P1,P),  (S1 < SCI ; (S1 =:= SCI, N1 < NumberOfNodes))),
-    !.
+    \+ (placement(App, P1, S1, N1), dif(P1,P),  (S1 < SCI ; (S1 =:= SCI, N1 < NumberOfNodes))).
     
 %# Finds a valid placement for the application and returns the SCI and the number of nodes associated with the placement.
 placement(App, P, SCI, NumberOfNodes) :-
     application(App, Ms, R),
-    eligiblePlacement(Ms, [], P), 
+    eligiblePlacement(Ms, P), 
     involvedNodes(P, NumberOfNodes),
-    (sci(App, R, P, SCI) -> true ; !, fail).
+    sci(App, R, P, SCI).
 
-
+eligiblePlacement(Ms, P) :- eligiblePlacement(Ms, [], P).
 %# Finds a valid placement for the list of microservices.
 eligiblePlacement([M|Ms], P, NewP) :-
     microservice(M, RR, _),
     placementNode(N, P, RR),
     eligiblePlacement(Ms, [on(M,N)|P], NewP).
 eligiblePlacement([], P, P).
-
 
 %# Checks if the node N can host the microservice M.
 placementNode(N, P, rr(CPUReq, RAMReq, BWinReq, BWoutReq)) :-
@@ -39,18 +30,14 @@ placementNode(N, P, rr(CPUReq, RAMReq, BWinReq, BWoutReq)) :-
     BWin >= UBWin + BWinReq, 
     BWout >= UBWout + BWoutReq.
 
-
 %# Counts the number of nodes used by the placement.
 involvedNodes(P, InvolvedNodes) :-
-    findall(N, distinct(node(N,_), member(on(_,N),P)), Nodes),
-    length(Nodes, InvolvedNodes).
-
+    findall(N, distinct(node(N,_), member(on(_,N),P)), Nodes), length(Nodes, InvolvedNodes).
 
 %# Calculates the amount of hardware used on node N.
 hardwareUsedAtNode(N, P, rr(UCPU, URAM, UBWin, UBWout)) :-
     findall(rr(CPU,RAM,BWin,BWout), (member(on(M,N),P), microservice(M,rr(CPU,RAM,BWin,BWout),_)), RRs),
     sumHWReqs(RRs, rr(UCPU, URAM, UBWin, UBWout)).
-
 
 %# Sums the hardware requirements of each microservice M placed on node N.
 sumHWReqs([rr(CPU,RAM,BWin,BWout) | RRs], rr(TCPU, TRAM, TBWin, TBWout)) :-
@@ -61,45 +48,40 @@ sumHWReqs([rr(CPU,RAM,BWin,BWout) | RRs], rr(TCPU, TRAM, TBWin, TBWout)) :-
     TBWout is AccBWout + BWout.
 sumHWReqs([], rr(0,0,0,0)).
 
-
 %# Finds all the endpoints relative to an application.
 allEndPoints(App, EPs) :-
     findall(Endpoints, interface(App, Endpoints), NestedEPs),
     flatten(NestedEPs, EPs).
-     
+
+%# Calculates the SCI of the application's placement.
+sci(App, R, P, SCI) :-
+    allEndPoints(App, EPs),
+    endpointsSCI(EPs, R, P, SCI).
 
 %# Calculates the SCI relative to a single endpoint considering the probability
 %# that said endpoint is called.
-sciEP(EP, R, P, SCI) :-
+endpointSCI(EP, R, P, SCI) :-
     endpoint(EP, EPMs),
     findall(on(M,N), (member(M, EPMs), member(on(M, N), P)), FilteredP),
     probability(EP, Prob),
     carbonEmissions(FilteredP, C),
     SCI is (C / R) * Prob.
 
-
-%# Calculates the SCI of the application's placement.
-sci(App, R, P, SCI) :-
-    allEndPoints(App, EPs),
-    calculateEPsSCI(EPs, R, P, SCI).
-
-
 %# Calculates the SCI of all the application's endpoints.
-calculateEPsSCI([EP | EPs], R, P, SCI) :-
-    calculateEPsSCI(EPs, R, P, AccSCI),
-    sciEP(EP, R, P, EPSCI),
-    SCI is EPSCI + AccSCI.
-calculateEPsSCI([], _, _, 0).
-
+endpointsSCI(EndPoints, R, P, SCI) :- endpointsSCI(EndPoints,R,P,0,SCI).
+endpointsSCI([EP|EPs], R, P, OldSCI, NewSCI) :-
+    endpointSCI(EP,R,P,EPSCI),
+    TmpSCI is OldSCI + EPSCI,
+    endpointsSCI(EPs,R,P,TmpSCI,NewSCI).
+endpointsSCI([],_,_,SCI,SCI).
 
 %# Calculates the carbon amount of a placement.
-carbonEmissions([on(Microservice, Node) | P], C) :-
+carbonEmissions([on(Microservice,Node)|P], C) :-
     carbonEmissions(P, AccC),
     operationalCarbon(Node, Microservice, O),
     embodiedCarbon(Node, Microservice, E),
     C is AccC + O + E.
 carbonEmissions([], 0).
-
 
 %# Calculates the amount of energy required to run microservice M on node N for the entire TiL.
 operationalEnergy(Node, Microservice, E) :-
@@ -107,13 +89,11 @@ operationalEnergy(Node, Microservice, E) :-
     microservice(Microservice, _, TiR),
     E is PUE * (TiR * 365 * 24) * PowerPerCPU.
 
-
 %# Calculates the carbon intensity of running microservice M on node N.
 operationalCarbon(Node, Microservice, O) :-
     carbon_intensity(Node, I),
     operationalEnergy(Node, Microservice, E),
     O is E * I.
-
 
 %# Calculates the embodied carbon intensity of microservice M on node N.
 embodiedCarbon(Node, Microservice, M) :-
