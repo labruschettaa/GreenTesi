@@ -4,8 +4,5 @@
 :- consult('infrastructure.pl').
 :- consult('application.pl').
 
-%# We assume we are located in Italy.
-% carbon_intensity(_, 0.389).
-
 specialDirectory('.').
 specialDirectory('..').

@@ -8,10 +8,11 @@ minPlacement(App, P, SCI, NumberOfNodes) :-
     
 %# Finds a valid placement for the application and returns the SCI and the number of nodes associated with the placement.
 placement(App, P, SCI, NumberOfNodes) :-
-    application(App, Ms, R),
+    application(App, Ms, EPs),
+    functionalUnits(App, R),
     eligiblePlacement(Ms, P), 
     involvedNodes(P, NumberOfNodes),
-    sci(App, R, P, SCI).
+    sci(EPs, R, P, SCI).
 
 eligiblePlacement(Ms, P) :- eligiblePlacement(Ms, [], P).
 %# Finds a valid placement for the list of microservices.
@@ -32,7 +33,8 @@ placementNode(N, P, rr(CPUReq, RAMReq, BWinReq, BWoutReq)) :-
 
 %# Counts the number of nodes used by the placement.
 involvedNodes(P, InvolvedNodes) :-
-    findall(N, distinct(node(N,_), member(on(_,N),P)), Nodes), length(Nodes, InvolvedNodes).
+    findall(N, distinct(node(N,_), member(on(_,N),P)), Nodes), 
+    length(Nodes, InvolvedNodes).
 
 %# Calculates the amount of hardware used on node N.
 hardwareUsedAtNode(N, P, rr(UCPU, URAM, UBWin, UBWout)) :-
@@ -48,15 +50,13 @@ sumHWReqs([rr(CPU,RAM,BWin,BWout) | RRs], rr(TCPU, TRAM, TBWin, TBWout)) :-
     TBWout is AccBWout + BWout.
 sumHWReqs([], rr(0,0,0,0)).
 
-%# Finds all the endpoints relative to an application.
-allEndPoints(App, EPs) :-
-    findall(Endpoints, interface(App, Endpoints), NestedEPs),
-    flatten(NestedEPs, EPs).
-
 %# Calculates the SCI of the application's placement.
-sci(App, R, P, SCI) :-
-    allEndPoints(App, EPs),
-    endpointsSCI(EPs, R, P, SCI).
+sci(EndPoints, R, P, SCI) :- sci(EndPoints,R,P,0,SCI).
+sci([EP|EPs], R, P, OldSCI, NewSCI) :-
+    endpointSCI(EP,R,P,EPSCI),
+    TmpSCI is OldSCI + EPSCI,
+    sci(EPs,R,P,TmpSCI,NewSCI).
+sci([],_,_,SCI,SCI).
 
 %# Calculates the SCI relative to a single endpoint considering the probability
 %# that said endpoint is called.
@@ -66,14 +66,6 @@ endpointSCI(EP, R, P, SCI) :-
     probability(EP, Prob),
     carbonEmissions(FilteredP, C),
     SCI is (C / R) * Prob.
-
-%# Calculates the SCI of all the application's endpoints.
-endpointsSCI(EndPoints, R, P, SCI) :- endpointsSCI(EndPoints,R,P,0,SCI).
-endpointsSCI([EP|EPs], R, P, OldSCI, NewSCI) :-
-    endpointSCI(EP,R,P,EPSCI),
-    TmpSCI is OldSCI + EPSCI,
-    endpointsSCI(EPs,R,P,TmpSCI,NewSCI).
-endpointsSCI([],_,_,SCI,SCI).
 
 %# Calculates the carbon amount of a placement.
 carbonEmissions([on(Microservice,Node)|P], C) :-
