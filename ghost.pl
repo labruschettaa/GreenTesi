@@ -19,6 +19,16 @@ scoredNodes(Nodes) :-
 
 scores(N,CS,RS) :- carbonScore(N,CS), resourceScore(N,RS).
 
+resourceScore(N,RS) :-
+    node(N,tor(CPU, RAM, BWIn, BWOut),_,_,_,_),
+    maxResources(MaxCPU,MaxRAM,MaxBWIn,MaxBWOut),
+    minResources(MinCPU,MinRAM,MinBWIn,MinBWOut),
+    P1 is 0.25*(MaxCPU-CPU)/(MaxCPU-MinCPU),
+    P2 is 0.25*(MaxRAM-RAM)/(MaxRAM-MinRAM),
+    P3 is 0.25*(MaxBWIn-BWIn)/(MaxBWIn-MinBWIn),
+    P4 is 0.25*(MaxBWOut-BWOut)/(MaxBWOut-MinBWOut),
+    RS is P1 + P2 + P3 + P4, assert(rs(N,RS)).
+
 carbonScore(N,CS) :- 
     node(N,_,_,_,_,_),
     of(N,OF), minOF(MinOF), maxOF(MaxOF),
@@ -51,17 +61,6 @@ resourceRankingFactors() :-
     assert(maxResources(MaxCPU,MaxRAM,MaxBWIn,MaxBWOut)),
     assert(minResources(MinCPU,MinRAM,MinBWIn,MinBWOut)).
 
-
-resourceScore(N,RS) :-
-    node(N,tor(CPU, RAM, BWIn, BWOut),_,_,_,_),
-    maxResources(MaxCPU,MaxRAM,MaxBWIn,MaxBWOut),
-    minResources(MinCPU,MinRAM,MinBWIn,MinBWOut),
-    P1 is 0.25*(MaxCPU-CPU)/(MaxCPU-MinCPU),
-    P2 is 0.25*(MaxRAM-RAM)/(MaxRAM-MinRAM),
-    P3 is 0.25*(MaxBWIn-BWIn)/(MaxBWIn-MinBWIn),
-    P4 is 0.25*(MaxBWOut-BWOut)/(MaxBWOut-MinBWOut),
-    RS is P1 + P2 + P3 + P4, assert(rs(N,RS)).
-    
 %# Finds a valid placement for the application and returns the SCI and the number of nodes associated with the placement.
 qPlacement(App, P, SCI, NumberOfNodes) :-
     scoredNodes(Nodes),
@@ -151,4 +150,3 @@ embodiedCarbon(Node, Microservice, M) :-
     TS is TiR / EL,
     RS is CPUReq / CPU,
     M is TE * TS * RS.
-
