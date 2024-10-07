@@ -4,6 +4,7 @@
 :- dynamic mf/2.
 :- dynamic maxOF/1, minOF/1.
 :- dynamic maxMF/1, minMF/1.
+:- dynamic maxResources/4, minResources/4.
 
 cleanUp() :-
     retractall(of(_,_)), retractall(maxOF(_)), retractall(minOF(_)),
@@ -14,7 +15,7 @@ scoredNodes(Nodes) :-
     retractall(cs(_,_)), retractall(rs(_,_)),
     carbonRankingFactors(), resourceRankingFactors(),
     findall(candidate(CS,RS,N), scores(N,CS,RS), CNodes), 
-    sort(0,@=<,CNodes,Nodes), writeln(Nodes),
+    sort(0,@=<,CNodes,Nodes),% writeln(Nodes),
     cleanUp().
 
 scores(N,CS,RS) :- carbonScore(N,CS), resourceScore(N,RS).
@@ -23,19 +24,33 @@ resourceScore(N,RS) :-
     node(N,tor(CPU, RAM, BWIn, BWOut),_,_,_,_),
     maxResources(MaxCPU,MaxRAM,MaxBWIn,MaxBWOut),
     minResources(MinCPU,MinRAM,MinBWIn,MinBWOut),
-    P1 is 0.25*(MaxCPU-CPU)/(MaxCPU-MinCPU),
-    P2 is 0.25*(MaxRAM-RAM)/(MaxRAM-MinRAM),
-    P3 is 0.25*(MaxBWIn-BWIn)/(MaxBWIn-MinBWIn),
-    P4 is 0.25*(MaxBWOut-BWOut)/(MaxBWOut-MinBWOut),
+    safeROp(0.25, CPU, MaxCPU, MinCPU, P1),
+    safeROp(0.25, RAM, MaxRAM, MinRAM, P2),
+    safeROp(0.25, BWIn, MaxBWIn, MinBWIn, P3),
+    safeROp(0.25, BWOut, MaxBWOut, MinBWOut, P4),
     RS is P1 + P2 + P3 + P4, assert(rs(N,RS)).
+
+safeROp(F, E, MaxE, MinE, R) :-
+    O is F*(MaxE - E),
+    D is MaxE - MinE,
+    safeDiv(O, D, R).
+
+safeDiv(_, 0, 0).
+safeDiv(_, 0.0, 0).
+safeDiv(O, D, R) :- D \= 0, D\=0.0, R is O / D.
 
 carbonScore(N,CS) :- 
     node(N,_,_,_,_,_),
     of(N,OF), minOF(MinOF), maxOF(MaxOF),
-    P1 is 0.5 * (OF-MinOF)/(MaxOF-MinOF),
+    safeCOp(0.5, OF, MaxOF, MinOF, P1),
     mf(N,MF), minMF(MinMF), maxMF(MaxMF),
-    P2 is 0.5 * (MF-MinMF)/(MaxMF-MinMF),
+    safeCOp(0.5, MF, MaxMF, MinMF, P2),
     CS is P1 + P2, assert(cs(N,CS)).
+
+safeCOp(F, E, MaxE, MinE, R) :-
+    O is F*(E - MinE),
+    D is MaxE - MinE,
+    safeDiv(O, D, R).
 
 carbonRankingFactors() :-
     findall(OF, nodeOF(N,OF), OFs), max_list(OFs, MaxOF), min_list(OFs,MinOF),

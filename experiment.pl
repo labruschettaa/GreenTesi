@@ -1,5 +1,5 @@
-:- consult('main.pl').
-:- consult('resources/variables.pl').
+
+:- dynamic node/6, carbon_intensity/2.
 
 %# Prepares the environment for the experiment.
 experimentalEnvironment(FileName) :-
@@ -20,24 +20,24 @@ placement(FileName, App, P, SCI, NumberOfNodes) :-
 
 %# Creates a new experiment.
 create(experiment):-
-    retractall(node(_,_,_,_,_,_)),
+    cleanup,
     cleanDirectory('resources/testing').
 
 
 %# Deletes all references to nodes.
-cleanup:- retractall(node(_,_,_,_,_,_)).
+cleanup:- retractall(node(_,_,_,_,_,_)), retractall(carbon_intensity(_,_)).
 
 
 %# Creates a new node for the experiment.
-create(experimentNode, FileName, Name, tor(NCPU, RAM, BWin, BWout), E, EL, TE, PUE) :-
+create(experimentNodes, FileName, ListN, ListI) :-
     testingDirectory(FileName,FullPath),
     open(FullPath, append, Stream),
     consult(FullPath),
-    writeP(Stream, node, [Name, tor(NCPU, RAM, BWin, BWout), E, EL, TE, PUE]),   
+    writeNs(Stream, ListN),  
+    writeIs(Stream, ListI), 
     close(Stream),
     consult(FullPath),
     !.  
-
 
 %# Returns the full path of the testing file.
 testingDirectory(FileName, FullPath) :-
@@ -52,14 +52,23 @@ deleteDirElem(Directory, File) :-
     (   exists_file(FilePath) ->  delete_file(FilePath)
     ;   exists_directory(FilePath) ->  cleanDirectory(FilePath), delete_directory(FilePath);   true).
 
-
-
 %# Cleans a directory.
 cleanDirectory(Directory) :-
     directory_files(Directory, Fs),
     exclude(specialDirectory, Fs, FsList),
     maplist(deleteDirElem(Directory), FsList).
 
+writeNs(Stream, [N|Lst]) :-
+    term_string(node(Name, tor(NCPU, RAM, BWin, BWout), E, EL, TE, PUE), N),
+    writeP(Stream, node, [Name, tor(NCPU, RAM, BWin, BWout), E, EL, TE, PUE]),
+    writeNs(Stream, Lst).
+writeNs(_, []).
+
+writeIs(Stream, [CI|Lst]) :-
+    term_string(carbon_intensity(Name, I), CI),
+    writeP(Stream, carbon_intensity, [Name, I]),
+    writeIs(Stream, Lst).
+writeIs(_, []).
 
 %# Writes a predicate to a file.
 writeP(Stream, Predicate, Values) :-

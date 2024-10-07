@@ -11,8 +11,33 @@ class NodeT(Enum):
     X2LARGE = 6
 
 
+EMISSIONS = [
+    {
+        "name": "gas",
+        "emission": 0.610
+    },
+    {
+        "name": "coal",
+        "emission": 1.1
+    },
+    {
+        "name": "onshorewind",
+        "emission": 0.0097
+    },
+    {
+        "name": "offshorewind",
+        "emission": 0.0165
+    },
+    {
+        "name": "solar",
+        "emission": 0.05
+    }
+]
+
+
+
 class Node:
-    def __init__(self, name, ncpu, ram, bwin, bwout, e, el, te, pue):
+    def __init__(self, name, ncpu, ram, bwin, bwout, e, el, te, pue, i):
         self.name = name
         self.ncpu = ncpu
         self.ram = ram
@@ -22,6 +47,7 @@ class Node:
         self.el = el
         self.te = te
         self.pue = pue
+        self.i = i
     def __str__(self):
         return f'Node: {self.name}, tor({self.ncpu},{self.ram},{self.bwin},{self.bwout}), {self.e}, {self.el}, {self.te}, {self.pue}'
 
@@ -49,26 +75,34 @@ class FactoryNode:
     @staticmethod
     def getNode(nodeType:NodeT):
         """Generates a node class `Node` of the specified value `nodeType`."""
-        te = 2000
-        el = random.randint(3,7)
+        te = random.randint(1000, 2000)
+        el = random.randint(3, 7)
         pue = random.uniform(1.1, 3.0)
         numNode = str(FactoryNode.numNodes[nodeType.value])
+        i = EMISSIONS[random.randint(0, len(EMISSIONS) - 1)]['emission']
         FactoryNode.numNodes[nodeType.value] += 1
         match nodeType:
             case NodeT.NANO:
-                return Node("n_" + numNode, 2, 0.5, 5, 5, 0.005, el, te, pue)
+                e = random.uniform(0.001, 0.005)
+                return Node("n_" + numNode, 2, 0.5, 5, 5, e, el, te, pue, i)
             case NodeT.MICRO:
-                return Node("mi_" + numNode, 2, 1, 5, 5, 0.01, el, te, pue)
+                e = random.uniform(0.005, 0.01)
+                return Node("mi_" + numNode, 2, 1, 5, 5, e, el, te, pue, i)
             case NodeT.SMALL:
-                return Node("s_" + numNode, 2, 2, 5, 5, 0.01, el, te, pue)
+                e = random.uniform(0.01, 0.015)
+                return Node("s_" + numNode, 2, 2, 5, 5, e, el, te, pue, i)
             case NodeT.MEDIUM: 
-                return Node("m_" + numNode, 2, 4, 12.5, 12.5, 0.01, el, te, pue)
+                e = random.uniform(0.015, 0.025)
+                return Node("m_" + numNode, 2, 4, 12.5, 12.5, e, el, te, pue, i)
             case NodeT.LARGE:
-                return Node("l_" + numNode, 2, 8, 12.5, 12.5, 0.015, el, te, pue)
+                e = random.uniform(0.025, 0.04)
+                return Node("l_" + numNode, 2, 8, 12.5, 12.5, e, el, te, pue, i)
             case NodeT.XLARGE:
-                return Node("xl_" + numNode, 4, 16, 12.5, 12.5, 0.025, el, te, pue)
+                e = random.uniform(0.04, 0.06)
+                return Node("xl_" + numNode, 4, 16, 12.5, 12.5, e, el, te, pue, i)
             case NodeT.X2LARGE:
-                return Node("xl2_" + numNode, 8, 32, 15, 15, 0.04, el, te, pue)
+                e = random.uniform(0.06, 0.1)
+                return Node("xl2_" + numNode, 8, 32, 15, 15, e, el, te, pue, i)
             case _:
                 raise Exception("Invalid node type.")
             

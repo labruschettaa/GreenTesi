@@ -2,6 +2,7 @@ from swiplserver import PrologMQI, PrologThread
 from data import FactoryNode
 import random, time, argparse, subprocess, os, re
 
+
 TESTING_DIRECTORY = 'resources/testing/'
  
 def checkInput(appName, arrayNums, prolog_thread):
@@ -12,6 +13,7 @@ def checkInput(appName, arrayNums, prolog_thread):
         raise Exception("The input must be a set of distinct positive integers.")
     if not all(isinstance(x, int) for x in arrayNums) or not all(i >= 0 for i in arrayNums) or not len(arrayNums) == len(set(arrayNums)):
         raise Exception("The input must be a set of distinct positive integers.")
+    prolog_thread.query("consult('resources/variables.pl').")
     result = prolog_thread.query(f"application({appName}, _, _).")
     if not isinstance(result, bool) or not result:
         raise Exception("Invalid appName.")
@@ -21,22 +23,27 @@ def checkInput(appName, arrayNums, prolog_thread):
 def generateNodes(num, filename):
     """Generates a file in the testing directory with the name `filename` containing 2**`num` nodes."""
     powerOfNum = 2**num
+    nodes = []
+    carbonIs = []
     for n in range(powerOfNum):
         node = FactoryNode.getRandNode()
-        prolog_thread.query(f"create(experimentNode, '{filename}', {node.name}, tor({node.ncpu}, {node.ram}, {node.bwin}, {node.bwout}), {node.e}, {node.el}, {node.te}, {node.pue}).")
+        nodes.append(f"node('{node.name}', tor({node.ncpu}, {node.ram}, {node.bwin}, {node.bwout}), {node.e}, {node.el}, {node.te}, {node.pue}).")
+        carbonIs.append(f"carbon_intensity('{node.name}', {node.i}).")
+    prolog_thread.query(f"create(experimentNodes, '{filename}', {nodes}, {carbonIs}).")
 
 
 def runExperiment(filename, appName, prolog_thread: PrologThread, heuristic=False):
     """Runs the experiment for the file `filename` using the `prolog_thread`."""
     start = time.perf_counter()
     if parsedArgs.h:
-        subprocess.run(['python', 'heuristic.py', '--t', filename])
-        prolog_thread.query(f"heuristicExperimentalEnvironment('{filename}').")
-        result = prolog_thread.query_async(f"heuristicMinPlacement('{appName}', P, SCI, NumberOfNodes).")
-    else:
+        prolog_thread.query(f"consult('ghost.pl').")
         prolog_thread.query(f"experimentalEnvironment('{filename}').")
-
-        result = prolog_thread.query_async(f"minPlacement('{appName}', P, SCI, NumberOfNodes).")
+        prolog_thread.query_async(f"qPlacement('{appName}', P, SCI, NumberOfNodes).")
+    else:
+        prolog_thread.query(f"consult('main.pl').")
+        prolog_thread.query(f"experimentalEnvironment('{filename}').")
+        prolog_thread.query_async(f"minPlacement('{appName}', P, SCI, NumberOfNodes).")
+    print(f"Running test for {filename}...")
     result = prolog_thread.query_async_result()
     end = time.perf_counter()
     duration = end - start
@@ -55,6 +62,7 @@ def runExperiment(filename, appName, prolog_thread: PrologThread, heuristic=Fals
                       SCI = {result['SCI']}
                       NUMBER OF NODES = {result['NumberOfNodes']}
           """)
+    
     
 
 def sort_key(filename):
