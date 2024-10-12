@@ -58,6 +58,8 @@ def generateFileNodes(n, filename, mode:Mode, app=None):
                 intensities += fitIntensity 
     else:
         nodes, intensities = generateNodes(n, NodeT.RANDOM)
+    if not os.path.exists(TESTING_DIRECTORY):
+        os.makedirs(TESTING_DIRECTORY)
     with open(filename, "w") as file:
         file.write(nodes+intensities)
 
