@@ -1,3 +1,7 @@
+:- multifile node/6, carbon_intensity/2.
+:- dynamic node/6, carbon_intensity/2.
+:- discontiguous node/6, carbon_intensity/2.
+
 cleanUp() :-
     retractall(of(_,_)), retractall(maxOF(_)), retractall(minOF(_)),
     retractall(mf(_,_)), retractall(maxMF(_)), retractall(minMF(_)),

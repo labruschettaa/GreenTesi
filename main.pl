@@ -11,7 +11,7 @@
 
 timedPlacement(Mode, App, P, SCI, N, Time) :-
     statistics(cputime, TStart),
-        placement(Mode, App, P, SCI, N),
+    placement(Mode, App, P, SCI, N),
     statistics(cputime, TEnd),
     Time is TEnd - TStart.
 
