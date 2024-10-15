@@ -12,8 +12,8 @@ safeCOp(F, E, MaxE, MinE, R) :-
     safeDiv(O, D, R).
 
 safeROp(F, E, MaxE, MinE, R) :-
-    O is F*(MaxE - E), D is MaxE - MinE, safeDiv(O, D, R).
+    O is F*(MaxE - E), D is MaxE - MinE, 
+    safeDiv(O, D, R).
 
 safeDiv(_, 0, 0).
 safeDiv(O, D, R) :- dif(D,0), R is O / D.
-
