@@ -1,8 +1,5 @@
 from swiplserver import PrologMQI
-import random as rnd
-from data import FactoryNode, NodeT, Microservice
-import argparse, os, re
-from enum import Enum
+import argparse
 
 
 def getParameters():
