@@ -1,73 +1,6 @@
 % Load utility predicates.
 :- ['utils.pl'].
 
-% Set up interpreter.
-:- dynamic of/2, mf/2.
-:- dynamic maxOF/1, minOF/1.
-:- dynamic maxMF/1, minMF/1.
-:- dynamic maxResources/4, minResources/4.
-:- dynamic resourceScore/3.
-:-set_prolog_flag(stack_limit, 16 000 000 000).
-:-set_prolog_flag(last_call_optimisation, true).
-
-%####################################################
-%# Nuovi predicati o predicati modificati
-%####################################################
-:- discontiguous eligiblePlacement/4.
-testPlacement(AFile, IFile, Mode, App, P, SCI, N, Time) :-
-    consult(AFile),
-    consult(IFile),
-    timedPlacement(Mode, App, P, SCI, N, Time),
-    retractall(node(_,_,_,_,_,_)),
-    writeln(P).
-
-scoredMicroservices(Microservices) :-
-    retractall(rs(_,_)), resourceRankingFactors(microservice),
-    findall(candidate(RS,M), scores(M,RS), CMicroservices), 
-    sort(0,@=<,CMicroservices,Microservices),
-    cleanUp().
-
-scores(Ms,RS) :- resourceScore(microservice,Ms,RS).
-scores(N,CS,RS) :- carbonScore(N,CS), resourceScore(node,N,RS).
-
-resourceScore(microservice,M,RS) :- microservice(M,rr(CPU, RAM, BWIn, BWOut),_), resourceScore(M, CPU, RAM, BWIn, BWOut, RS).
-resourceScore(node,N,RS) :- node(N,tor(CPU, RAM, BWIn, BWOut),_,_,_,_), resourceScore(N, CPU, RAM, BWIn, BWOut, RS).
-
-
-%# Le due funzioni a seguire hanno molto codice ripetuto, si potrebbe molto probabilmente migliorare.
-resourceRankingFactors(microservice) :-
-    findall(CPU,microservice(M,rr(CPU, RAM, BWIn, BWOut),_),CPUs), 
-    max_list(CPUs,MaxCPU), min_list(CPUs,MinCPU),
-    findall(RAM,microservice(M,rr(CPU, RAM, BWIn, BWOut),_),RAMs),
-    max_list(RAMs,MaxRAM), min_list(RAMs,MinRAM),
-    findall(BWIn,microservice(M,rr(CPU, RAM, BWIn, BWOut),_),BWIns),
-    max_list(BWIns,MaxBWIn), min_list(BWIns,MinBWIn),
-    findall(BWOut,microservice(M, rr(CPU, RAM, BWIn, BWOut),_),BWOuts), 
-    max_list(BWOuts,MaxBWOut), min_list(BWOuts,MinBWOut),
-    assert(maxResources(MaxCPU,MaxRAM,MaxBWIn,MaxBWOut)), assert(minResources(MinCPU,MinRAM,MinBWIn,MinBWOut)).
-
-resourceRankingFactors(node) :-
-    findall(CPU,node(N,tor(CPU, RAM, BWin, BWout),_,_,_,_),CPUs), 
-    max_list(CPUs,MaxCPU), min_list(CPUs,MinCPU),
-    findall(RAM,node(N,tor(CPU, RAM, BWin, BWout),_,_,_,_),RAMs),
-    max_list(RAMs,MaxRAM), min_list(RAMs,MinRAM),
-    findall(BWIn,node(N,tor(CPU, RAM, BWIn, BWout),_,_,_,_),BWIns),
-    max_list(BWIns,MaxBWIn), min_list(BWIns,MinBWIn),
-    findall(BWOut,node(N,tor(CPU, RAM, BWIn, BWOut),_,_,_,_),BWOuts), 
-    max_list(BWOuts,MaxBWOut), min_list(BWOuts,MinBWOut),
-    assert(maxResources(MaxCPU,MaxRAM,MaxBWIn,MaxBWOut)), assert(minResources(MinCPU,MinRAM,MinBWIn,MinBWOut)).
-
-%# Anche questa funzione è molto simile a elegiblePlacement([M|Ms],...) e potrebbe forse essere migliorata.
-eligiblePlacement([candidate(_,M)|Ms], Nodes, P, NewP) :-
-    microservice(M, RR, _),
-    member(candidate(_,_,N),Nodes), 
-    placementNode(N, P, RR), 
-    eligiblePlacement(Ms, Nodes, [on(M,N)|P], NewP).
-
-%####################################################
-%####################################################
-
-
 timedPlacement(Mode, App, P, SCI, N, Time) :-
     statistics(cputime, TStart),
     placement(Mode, App, P, SCI, N),
@@ -96,8 +29,16 @@ placement(opt, App, P, SCI, NumberOfNodes) :-
 scoredNodes(Nodes) :-
     retractall(cs(_,_)), retractall(rs(_,_)),
     carbonRankingFactors(), resourceRankingFactors(node),
-    findall(candidate(CS,RS,N), scores(N,CS,RS), CNodes), 
-    sort(0,@=<,CNodes,Nodes),
+    findall(candidate(CS,RS,N), scores(N,CS,RS), TmpNodes), 
+    sort(0,@=<,TmpNodes,SNodes),
+    findall(N, member(candidate(_,_,N), SNodes), Nodes),
+    cleanUp().
+
+scoredMicroservices(Microservices) :-
+    retractall(rs(_,_)), resourceRankingFactors(microservice),
+    findall(ms(RS,M), scores(M,RS), TmpMs), 
+    sort(0,@=<,TmpMs,SMs),
+    findall(M, member(ms(_,M), SMs), Microservices),
     cleanUp().
 
 resourceScore(E, CPU, RAM, BWIn, BWOut, RS) :-
@@ -117,7 +58,7 @@ carbonScore(N,CS) :-
     mf(N,MF), minMF(MinMF), maxMF(MaxMF),
     safeCOp(0.5, MF, MaxMF, MinMF, P2),
     CS is P1 + P2, assert(cs(N,CS)).
-
+    
 carbonRankingFactors() :-
     findall(OF, nodeOF(N,OF), OFs), max_list(OFs, MaxOF), min_list(OFs,MinOF),
     assert(maxOF(MaxOF)), assert(minOF(MinOF)),
@@ -128,18 +69,20 @@ nodeOF(N,OF) :- node(N,_,PowerPerCPU,_,_,PUE), carbon_intensity(N,I), OF is PUE 
 
 nodeMF(N,MF) :- node(N,_,_,EL,TE,_), MF is TE/EL, assert(mf(N,MF)).
 
- 
-eligiblePlacement(Ms, Nodes, P) :- eligiblePlacement(Ms, Nodes, [], P).
+scores(Ms,RS) :- resourceScore(microservice,Ms,RS).
+scores(N,CS,RS) :- carbonScore(N,CS), resourceScore(node,N,RS).
 
-%# Finds a valid placement for the list of microservices.
+resourceScore(microservice,M,RS) :- microservice(M,rr(CPU, RAM, BWIn, BWOut),_), resourceScore(M, CPU, RAM, BWIn, BWOut, RS).
+resourceScore(node,N,RS) :- node(N,tor(CPU, RAM, BWIn, BWOut),_,_,_,_), resourceScore(N, CPU, RAM, BWIn, BWOut, RS).
+
+eligiblePlacement(Ms, Nodes, P) :- eligiblePlacement(Ms, Nodes, [], P).
 eligiblePlacement([M|Ms], Nodes, P, NewP) :-
     microservice(M, RR, _),
-    member(candidate(_,_,N),Nodes), placementNode(N, P, RR),
+    member(N,Nodes), placementNode(N, P, RR),
     eligiblePlacement(Ms, Nodes, [on(M,N)|P], NewP).
 eligiblePlacement([], _, P, P).
 
 eligiblePlacement(Ms, P) :- eligible(Ms, [], P).
-%# Finds a valid placement for the list of microservices.
 eligible([M|Ms], P, NewP) :-
     microservice(M, RR, _),
     placementNode(N, P, RR),

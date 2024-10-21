@@ -1,5 +1,5 @@
-%application(onlineBoutique, [frontend, checkout, currency, email, payment, recommendation, shipping, ad, cart, product_catalog], [home, product, addToCart, viewCart, emptyCart, placeOrder]).
-application(onlineBoutiqueHome, [currency, product_catalog, cart], [home]).
+application(onlineBoutique, [frontend, checkout, currency, email, payment, recommendation, shipping, ad, cart, product_catalog], [home, product, addToCart, viewCart, emptyCart, placeOrder]).
+%application(onlineBoutiqueHome, [currency, product_catalog, cart], [home]).
 
 microservice(frontend, rr(1, 2.0, 0.5, 0.5), 1).
 microservice(payment, rr(1, 1.5, 0.3, 0.4), 1).
@@ -26,5 +26,5 @@ probability(emptyCart, 0.05).
 probability(viewCart, 0.15).
 probability(placeOrder, 0.05).  
 
-%functionalUnits(onlineBoutique, 10000).
-functionalUnits(onlineBoutiqueHome, 10000).
+functionalUnits(onlineBoutique, 10000).
+%functionalUnits(onlineBoutiqueHome, 10000).
