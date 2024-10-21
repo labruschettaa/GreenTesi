@@ -97,11 +97,10 @@ def getParameters():
     prsr.add_argument('args', type=int, nargs='+', help='List of integers')
     prsr.add_argument('--mode', type=str, choices=['rnd', 'hrst'], required=True, help='Mode of operation')
     prsr.add_argument('--seed', type=int, help='Seed value')
-    prsr.add_argument('--Save', action='store_true', help='Keep the testing directory')
-    prsr.add_argument('--rerun', action='store_true', help='Runs the experiment again')
+    prsr.add_argument('--clean', action='store_true', help='Clean the testing directory')
     prsdArgs = prsr.parse_args()
     checkInput(prsdArgs.aFile, prsdArgs.args)
-    return prsdArgs.aFile, prsdArgs.args, Mode[prsdArgs.mode.upper()], prsdArgs.seed, prsdArgs.Save, prsdArgs.rerun
+    return prsdArgs.aFile, prsdArgs.args, Mode[prsdArgs.mode.upper()], prsdArgs.seed, prsdArgs.clean
 
 
 def transformOpt(optimal):
@@ -122,7 +121,7 @@ def insert(ms, n, dict):
 
 
 with PrologMQI() as mqi:
-    aFile, nList, mode, seed, save, rerun = getParameters()
+    aFile, nList, mode, seed, clean = getParameters()
     optimal = []
 
     if seed is not None:
@@ -144,10 +143,9 @@ with PrologMQI() as mqi:
             opt = transformOpt(opt['opt'])
             print(f"\nOptimal for {file} -> PACKING =")
             print(opt)
-    if not save:
+    if clean:
         cleanDirectory(TESTING_DIRECTORY)
     
-
 
 """
 def place(app, infra, m:Mode, p=None):

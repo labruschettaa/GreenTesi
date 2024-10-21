@@ -158,6 +158,11 @@ class FactoryNode:
                 raise Exception("Invalid node type.")
             
     @staticmethod  
-    def __resetNumNodesS():
+    def resetNumNodesS():
         """Resets the number of nodes generated for each type of node."""
         FactoryNode.numNodesS = [0] * len(NodeS)
+
+    @staticmethod
+    def resetNumNodesT():
+        """Resets the number of nodes generated for each type of node."""
+        FactoryNode.numNodesT = [0] * len(NodeT)

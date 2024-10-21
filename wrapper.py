@@ -1,4 +1,4 @@
-from swiplserver import PrologMQI
+from swiplserver import PrologMQI # type: ignore
 import argparse
 
 
@@ -34,13 +34,19 @@ def unpackP(place):
 
 with PrologMQI() as mqi:
     aFile, iFile, mode = getParameters()
-    print(f"\nGenerating file for {aFile}, {iFile}, {mode}...")
+    print(f"\nLoading file for {aFile}, {iFile}, {mode}...")
     with mqi.create_thread() as prolog_thread:
+        print(f"Starting thread...")
         prolog_thread.query(f"consult('{aFile}').")
+        print(f"consult('{aFile}').")
         prolog_thread.query(f"consult('{iFile}').")
+        print(f"consult('{iFile}').")
         prolog_thread.query(f"consult('main.pl').")
-        prolog_thread.query_async(f"timedPlacement({mode}, App, P, SCI, N, Time).")
+        print(f"consult('main.pl').")
+        prolog_thread.query_async(f"timedPlacement({mode}, App, P, SCI, N, Time).",find_all=False)
+        print(f"timedPlacement({mode}, App, P, SCI, N, Time).")
         result = prolog_thread.query_async_result()[0]
+        print(f"Result = {result}")
         if isinstance(result, bool):
             print("No solution found")
         else:
