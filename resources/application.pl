@@ -12,10 +12,10 @@ microservice(ad, rr(0.2, 0.6, 0.2, 0.2), 1).
 microservice(email, rr(0.2, 0.5, 0.1, 0.1), 1).
 microservice(currency, rr(0.2, 0.3, 0.05, 0.05), 1).
 
+endpoint(emptyCart, [cart]).
+endpoint(addToCart, [product_catalog, cart]).
 endpoint(home, [currency, product_catalog, cart]).
 endpoint(product, [product_catalog, currency, ad, cart, recommendation]).
-endpoint(addToCart, [product_catalog, cart]).
-endpoint(emptyCart, [cart]).
 endpoint(viewCart, [cart, currency, product_catalog, shipping, recommendation]).
 endpoint(placeOrder, [checkout, recommendation, product_catalog, currency, cart, shipping, payment, email]).
 
