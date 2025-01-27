@@ -1,0 +1,11 @@
+{
+    "GENERATED_INFRASTRUCTURE_DIRECTORY":  "../../resources/generated_infrastructures/",
+    "APPLICATION_DIRECTORY": "../../resources/applications/",
+    "FULL_APPLICATION_DIRECTORY": "../../resources/applications/applicationFULLms.pl",
+    "CSV_DIRECTORY": "../../resources/dataframes/",
+    "NUMBER_OF_ITERATIONS": 1,
+    "TIMEOUT_SECONDS": 5,
+    "LST_NUMBER_OF_NODES": [12,13,14,15,16,17,18,19,20],
+    "LST_SEEDS_FOR_RANDOM_INFRASTRUCTURE": [123456, 654321, 987654, 567890, 698087, 123457, 654323, 987652, 567895, 698081]
+}
+
