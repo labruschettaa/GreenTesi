@@ -1,5 +1,9 @@
-resources/testing/
-settings.json
 __pycache__/
+.venv/
 **/__pycache__/
 *.py[cod]
+code/__pycache__/
+/resources/generated_infrastructures/
+/resources/dataframes/
+.gitignore
+.gitignore

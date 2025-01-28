@@ -32,7 +32,10 @@ CLEAN_CI = EMISSIONS[0]['emission']
 DIRTY_PUE = 3.0
 DIRTY_CI = EMISSIONS[len(EMISSIONS)-1]['emission']
 
+
+### Enum class for different type of realistic random nodes with different specifications. ###
 class NodeS(Enum):
+    """Enumeration for different sizes of nodes."""
     NANO = 0
     MICRO = 1
     SMALL = 2
@@ -41,7 +44,13 @@ class NodeS(Enum):
     XLARGE = 5
     X2LARGE = 6
 
+### Enum class for different type of nodes. ###
+### The RANDOM node is for generating random realistic nodes, while the others are for the curated enviroment. ###
 class NodeT(Enum):
+    """Enumeration for different types of nodes.
+
+    The RANDOM node is for generating random realistic nodes, while the others are for the curated environment.
+    """
     RANDOM = 0
     FIT = 1
     BROKEN = 2
@@ -49,7 +58,21 @@ class NodeT(Enum):
 
 
 class Node:
-    def __init__(self, name, ncpu, ram, bwin, bwout, e, el, te, pue, i):
+    """Class representing a node.
+
+    Attributes:
+        name (str): The name of the node.
+        ncpu (int): Number of CPUs.
+        ram (float): Amount of RAM.
+        bwin (float): Bandwidth in.
+        bwout (float): Bandwidth out.
+        e (float): Energy consumption per CPU.
+        el (float): Expected lifespan.
+        te (float): Embodied carbon.
+        pue (float): Power usage effectiveness.
+        i (float): Carbon intensity.
+    """
+    def __init__(self, name:str, ncpu:int, ram:float, bwin:float, bwout:float, e:float, el:float, te:float, pue:float, i:float):
         self.name = name
         self.ncpu = ncpu
         self.ram = ram
@@ -64,7 +87,17 @@ class Node:
         return f'Node: {self.name}, tor({self.ncpu},{self.ram},{self.bwin},{self.bwout}), {self.e}, {self.el}, {self.te}, {self.pue}'
 
 class Microservice:
-    def __init__(self, name, ncpu, ram, bwin, bwout, tir):
+    """Class representing a microservice.
+
+    Attributes:
+        name (str): The name of the microservice.
+        ncpu (int): Number of CPUs.
+        ram (float): Amount of RAM.
+        bwin (float): Bandwidth in.
+        bwout (float): Bandwidth out.
+        tir (float): Time in running.
+    """
+    def __init__(self, name:str, ncpu:int, ram:float, bwin:float, bwout, tir:float):
         self.name = name
         self.ncpu = ncpu
         self.ram = ram
@@ -75,11 +108,29 @@ class Microservice:
         return f'Microservice: {self.name}, rr({self.ncpu},{self.ram},{self.bwin},{self.bwout}), {self.tir}'
 
 class FactoryNode:
+    """Factory class for generating nodes.
+
+    Attributes:
+        numNodesS (list): List to keep track of the number of nodes generated for each size.
+        numNodesT (list): List to keep track of the number of nodes generated for each type.
+    """
     numNodesS = [0] * len(NodeS)
     numNodesT = [0] * len(NodeT)
 
     @staticmethod
     def node(node: Union[NodeS, NodeT], ms:Microservice=None):
+        """Generates a node of the specified type.
+
+        Args:
+            node (Union[NodeS, NodeT]): The type of node to generate.
+            ms (Microservice, optional): The microservice associated with the node.
+
+        Returns:
+            Node: The generated node.
+
+        Raises:
+            Exception: If an invalid node type is provided.
+        """
         if isinstance(node, NodeS):
             return FactoryNode.__nodeS(node)
         elif isinstance(node, NodeT):
@@ -90,13 +141,29 @@ class FactoryNode:
     
     @staticmethod
     def __randNode():
-        """Generates a random `node` class `Node`."""
+        """Generates a random node of class `Node`.
+
+        Returns:
+            Node: The generated random node.
+        """
         randNum = random.randint(0, len(NodeS) - 3)
         node = FactoryNode.node(NodeS(randNum))
         return node    
 
     @staticmethod
     def __nodeT(nodeType:NodeT, ms:Microservice=None):
+        """Generates a node of the specified type `NodeT`.
+
+        Args:
+            nodeType (NodeT): The type of node to generate.
+            ms (Microservice, optional): The microservice associated with the node.
+
+        Returns:
+            Node: The generated node.
+
+        Raises:
+            Exception: If a microservice is not provided for certain node types.
+        """
         numNode = str(FactoryNode.numNodesT[nodeType.value])
         e = random.uniform(0.020, 0.025)
         te = random.randint(1100, 2000)
@@ -125,12 +192,19 @@ class FactoryNode:
             
     @staticmethod
     def __nodeS(nodeType:NodeS):
-        """Generates a node class `Node` of the specified value `NodeSype`."""
+        """Generates a node of the specified size `NodeS`.
+
+        Args:
+            nodeType (NodeS): The size of the node to generate.
+
+        Returns:
+            Node: The generated node.
+        """
         te = random.randint(1000, 2000)
         el = random.randint(3, 7)
         pue = random.uniform(1.1, 3.0)
         numNode = str(FactoryNode.numNodesS[nodeType.value])
-        i = EMISSIONS[random.randint(0, len(EMISSIONS) - 1)]['emission']
+        i = random.uniform(0.0097, 1.1)
         FactoryNode.numNodesS[nodeType.value] += 1
         match nodeType:
             case NodeS.NANO:
@@ -166,3 +240,29 @@ class FactoryNode:
     def resetNumNodesT():
         """Resets the number of nodes generated for each type of node."""
         FactoryNode.numNodesT = [0] * len(NodeT)
+
+class ModeEnv(Enum):
+    """Enumeration for different modes of node generation.
+
+    Attributes:
+        OPT (int): Random realistic mode.
+        CRTD (int): Curated mode.
+    """
+    RND = 0
+    CRTD = 1
+
+class ModeTest(Enum):
+    """Enumeration for different placement modes.
+
+    Attributes:
+        OPT (int): Optimized mode.
+        QUICK0 (int): Quick mode 0.
+        QUICK1 (int): Quick mode 1.
+        QUICK2 (int): Quick mode 2.
+        BASE (int): Base mode.
+    """
+    OPT = 0
+    QUICK0 = 1
+    QUICK1 = 2
+    QUICK2 = 3
+    BASE = 4
