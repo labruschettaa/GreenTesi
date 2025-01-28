@@ -72,9 +72,7 @@ def scalabilityResults(csvFile:str, modeTest:ModeTest, modeEnv:ModeEnv):
     plt.grid(True)
     plt.show()
 
-# py wrapper.py "../resources/applications/applicationFULLms.pl" "../resources/generated_infrastructures/crtd_12.pl" --mode base --p "[on(frontend, f_0), on(checkout, f_1), on(currency, f_2), on(email, f_3), on(payment, f_4), on(recommendation, f_5), on(shipping, f_6), on(ad, f_7), on(cart, f_8), on(product_catalog, f_9)]"
-#[16,32,64,128,256,512,1024,2048,4096,8192,16384,32768,65536,131072,262144,524288,1048576],
-# timedPlacement()
+
 def accuracyResults(csvFile:str, modeTest:ModeTest, modeEnv:ModeEnv):
     """Plots the accuracy results from a CSV file.
 
