@@ -176,9 +176,9 @@ class Test:
         try:
             if mode == ModeTest.BASE and packing is not None:
                 # --- TODO: Fix the packing option for the base mode. --- #
-                command = [sys.executable, '../wrapper.py', app, infra, '--m', mode.name.lower(), '--t', '--p', str(packing)]
+                command = [sys.executable, '../wrapper.py', app, infra, '--m', mode.name.lower(), '--t', '--p', str(packing), '--timeout', str(TIMEOUT_SECONDS)]
             else:
-                command = [sys.executable, '../wrapper.py', app, infra, '--m', mode.name.lower(), '--t']
+                command = [sys.executable, '../wrapper.py', app, infra, '--m', mode.name.lower(), '--t', '--timeout', str(TIMEOUT_SECONDS)]
             sp = subprocess.run(command,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.DEVNULL,
@@ -189,7 +189,6 @@ class Test:
             return None
         except subprocess.TimeoutExpired:
             print(f"The subprocess timed out after {TIMEOUT_SECONDS} seconds.")
-            sp.kill()
             return None
     
     def _extractNumber(self, filename):
@@ -249,7 +248,7 @@ class RealisticTestEnv(Test):
                 command = [sys.executable, 'generate.py', INFRASTRUCTURE_DIRECTORY, '--clean', '--mode', 'rnd', '--seed', str(SEEDS[iteration]), nodesSTR]
             else:
                 command = [sys.executable, 'generate.py', INFRASTRUCTURE_DIRECTORY, '--mode', 'rnd', '--seed',  str(SEEDS[iteration]), nodesSTR]  
-            subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
             # --- Executes all the test for each application in the application directory. --- #
             for afile in sorted(os.listdir(APPLICATION_DIRECTORY)):

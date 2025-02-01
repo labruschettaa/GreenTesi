@@ -97,34 +97,26 @@ def accuracyResults(csvFile:str, modeTest:ModeTest, modeEnv:ModeEnv):
     df['InfrastructureNodes'] = pd.to_numeric(df['InfrastructureNodes'], errors='coerce')
     df['Microservices'] = pd.to_numeric(df['Microservices'], errors='coerce')
 
-    df['SCI_diff'] = abs(df[f'SCI_{modetest}'] - df['SCI_opt']) / df['SCI_opt'] 
-
-    df = df.dropna(subset=['SCI_diff'])
-    avgSCIDiff = None
-
-    if modeEnv == ModeEnv.CRTD:
-        avgSCIDiff = df.groupby('InfrastructureNodes')['SCI_diff'].mean().reset_index()
-    else:
-        avgSCIDiff = df.groupby(['Microservices', 'InfrastructureNodes'])['SCI_diff'].mean().reset_index()
+    df = df.dropna(subset=[f'SCI_{modetest}'])
     
+    avgSCI = df.groupby(['Microservices', 'InfrastructureNodes'])[f'SCI_{modetest}'].mean().reset_index()
+    avgSCIopt = df.groupby(['Microservices', 'InfrastructureNodes'])['SCI_opt'].mean().reset_index()
+    mergedDF = pd.merge(avgSCI, avgSCIopt, on=['Microservices', 'InfrastructureNodes'], suffixes=('', '_opt'))
+    mergedDF['SCIDiff'] = abs(mergedDF[f'SCI_{modetest}'] - mergedDF['SCI_opt']) / mergedDF['SCI_opt']
+
     plt.figure(figsize=(10, 6))
     if modeEnv == ModeEnv.CRTD:
-        if not avgSCIDiff.empty:
-            plt.plot(avgSCIDiff['InfrastructureNodes'], avgSCIDiff['SCI_diff'], marker='o', linestyle='-', color='b', label='6 Endpoints')
-        else:
-            print("No data available for CRTD mode.")
+        plt.plot(mergedDF['InfrastructureNodes'], mergedDF['SCIDiff'], marker='o', linestyle='-', label='6 Endpoints')
     elif modeEnv == ModeEnv.RND:
-        colormap = plt.colormaps.get_cmap('tab10')
-        colors = [colormap(i) for i in range(len(avgSCIDiff['Microservices'].unique()))]
-        for i, ms in enumerate(avgSCIDiff['Microservices'].unique()):
-            msData = avgSCIDiff[avgSCIDiff['Microservices'] == ms]
-            plt.plot(msData['InfrastructureNodes'], msData['SCI_diff'], marker='o', linestyle='-', color=colors[i], label=f'Microservices {ms}')
+        for i, ms in enumerate(mergedDF['Microservices'].unique()):
+            ms_data = mergedDF[mergedDF['Microservices'] == ms]
+            plt.plot(ms_data['InfrastructureNodes'], ms_data['SCIDiff'], marker='o', linestyle='-', label=f'Microservices {ms}')
     else:
         raise ValueError('Invalid modeEnv')
 
     plt.xlabel('Nodes')
     plt.ylabel('SCI Difference')
-    plt.ylim(0, 1)  
+    plt.ylim(bottom=0)  
     plt.yscale('linear')
     plt.xscale('log', base=2)
     
